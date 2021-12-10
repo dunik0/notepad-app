@@ -10,8 +10,9 @@ import MyButton from './MyButton';
 import * as SecureStore from 'expo-secure-store';
 // import * as uuid from 'uuid';
 import uuid from 'react-native-uuid';
+import { NavigationContainer } from '@react-navigation/native';
 
-export default function AddNote() {
+export default function AddNote({ navigation }) {
   const [title, onTitleChange] = useState();
   const [note, onNoteChange] = useState();
   const titleRef = useRef();
@@ -19,14 +20,19 @@ export default function AddNote() {
 
   const saveNote = async () => {
     if (title && note) {
-      const color = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+      const color =
+        '#' +
+        Math.floor(Math.random() * 16777215)
+          .toString(16)
+          .padStart(6, '0');
       const item = { title, note, color, date: new Date() };
       const key = uuid.v4();
       const keys = JSON.parse(await SecureStore.getItemAsync('keys'));
       await SecureStore.setItemAsync(key, JSON.stringify(item));
       await SecureStore.setItemAsync('keys', JSON.stringify([...keys, key]));
-      // titleRef.current.clear();
-      // noteRef.current.clear();
+      titleRef.current.clear();
+      noteRef.current.clear();
+      navigation.navigate('NoteList');
     } else {
       alert('Input field is empty');
     }
