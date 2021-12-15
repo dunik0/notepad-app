@@ -1,28 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { useIsFocused } from '@react-navigation/native';
 
-export default function NoteItem({ id, deleteItem }) {
-  const [data, setData] = useState({ loaded: false });
-  // const [randomColor, setRandomColor] = useState();
+export default function NoteItem({ deleteItem, navigation, data }) {
+  const isFocused = useIsFocused();
 
   const deleteSelf = async () => {
-    deleteItem(id);
+    deleteItem(data.key);
   };
 
-  useEffect(async () => {
-    setData({
-      ...JSON.parse(await SecureStore.getItemAsync(id)),
-      loaded: true,
-    });
-  }, []);
+  const editItem = () => {
+    navigation.navigate('EditNote', { data });
+  };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
+        onPress={editItem}
         onLongPress={deleteSelf}
         style={[styles.button, { backgroundColor: data?.color }]}
       >
+        <Text style={[styles.category, { color: data?.color }]}>
+          {data?.category}
+        </Text>
         <Text style={styles.date}>
           {data.loaded ? new Date(data?.date).toLocaleDateString() : null}
         </Text>
@@ -55,5 +56,12 @@ const styles = StyleSheet.create({
   },
   note: {
     fontSize: 20,
+  },
+  category: {
+    fontSize: 20,
+    backgroundColor: 'black',
+    marginRight: 'auto',
+    padding: 5,
+    borderRadius: 10,
   },
 });

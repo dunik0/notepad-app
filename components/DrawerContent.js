@@ -7,12 +7,35 @@ import {
 } from '@react-navigation/drawer';
 import infoIcon from '../assets/info-icon.png';
 import appLogo from '../assets/app-logo.png';
+import notesIcon from '../assets/notes-icon.png';
+import plusIcon from '../assets/plus-icon.png';
 
 export default function DrawerContent(props) {
   return (
     <DrawerContentScrollView {...props}>
       <Image source={appLogo} style={styles.logo} />
-      <DrawerItemList {...props} />
+      {/* <DrawerItemList {...props} /> */}
+
+      <DrawerItem
+        label="Your notes"
+        icon={() => <Image source={notesIcon} style={styles.icon} />}
+        onPress={() => props.navigation.navigate('NoteList')}
+        labelStyle={styles.label}
+      />
+
+      <DrawerItem
+        label="New note"
+        icon={() => <Image source={plusIcon} style={styles.icon} />}
+        onPress={() => props.navigation.navigate('AddNote')}
+        labelStyle={styles.label}
+      />
+
+      <DrawerItem
+        label="New category"
+        icon={() => <Image source={plusIcon} style={styles.icon} />}
+        onPress={() => props.navigation.navigate('AddCategory')}
+        labelStyle={styles.label}
+      />
 
       <DrawerItem
         label="Info"

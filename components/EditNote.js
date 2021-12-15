@@ -12,7 +12,7 @@ import uuid from 'react-native-uuid';
 import { Picker } from '@react-native-picker/picker';
 import { useIsFocused } from '@react-navigation/native';
 
-export default function AddNote({ navigation }) {
+export default function EditNote({ route: { params }, navigation }) {
   const [title, onTitleChange] = useState();
   const [note, onNoteChange] = useState();
   const [categories, setCategories] = useState([]);
@@ -20,26 +20,32 @@ export default function AddNote({ navigation }) {
   const titleRef = useRef();
   const noteRef = useRef();
   const isFocused = useIsFocused();
-
+  //   console.log(params);
   useEffect(async () => {
     const newCategories = JSON.parse(
       await SecureStore.getItemAsync('categories')
     );
     if (newCategories) setCategories(newCategories);
-  }, [isFocused]);
+
+    onTitleChange(params.data.title);
+    onNoteChange(params.data.note);
+    setCategory(params.data.category);
+  }, [isFocused, params.data]);
 
   const saveNote = async () => {
     if (title && note) {
-      const color =
-        '#' +
-        Math.floor(Math.random() * 16777215)
-          .toString(16)
-          .padStart(6, '0');
-      const key = uuid.v4();
-      const item = { title, note, color, category, key, date: new Date() };
-      const keys = JSON.parse(await SecureStore.getItemAsync('keys'));
+      console.log({ data: params.data });
+      const { key, color, date } = params.data;
+      const item = {
+        title,
+        note,
+        color,
+        category,
+        date,
+        key,
+        editDate: new Date(),
+      };
       await SecureStore.setItemAsync(key, JSON.stringify(item));
-      await SecureStore.setItemAsync('keys', JSON.stringify([...keys, key]));
       titleRef.current.clear();
       noteRef.current.clear();
       navigation.navigate('NoteList');
@@ -57,6 +63,7 @@ export default function AddNote({ navigation }) {
       <TextInput
         underlineColorAndroid="#000000"
         placeholder="Title"
+        value={title}
         onChangeText={onTitleChange}
         style={styles.input}
         ref={titleRef}
@@ -64,6 +71,7 @@ export default function AddNote({ navigation }) {
       <TextInput
         underlineColorAndroid="#000000"
         placeholder="Note"
+        value={note}
         onChangeText={onNoteChange}
         style={styles.input}
         ref={noteRef}

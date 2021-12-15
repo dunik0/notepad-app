@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useIsFocused } from '@react-navigation/native';
 import NoteItem from './NoteItem';
 
-export default function NoteList() {
+export default function NoteList({ navigation }) {
   const [keys, setKeys] = useState([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [notesData, setNotesData] = useState([]);
+  const [filteredNotes, setFilteredNotes] = useState([]);
   const isFocuesd = useIsFocused();
 
   const deleteItem = (key) => {
@@ -20,6 +30,8 @@ export default function NoteList() {
           const newKeys = [...keys];
           newKeys.splice(keys.indexOf(key), 1);
           setKeys(newKeys);
+          const newNotesData = notesData.filter((item) => item.key !== key);
+          setNotesData(newNotesData);
           await SecureStore.setItemAsync('keys', JSON.stringify(newKeys));
           await SecureStore.deleteItemAsync(key);
         },
@@ -27,28 +39,70 @@ export default function NoteList() {
     ]);
   };
 
-  const getKeys = async () => {
-    const currentKeys = JSON.parse(await SecureStore.getItemAsync('keys'));
-    if (currentKeys) setKeys(currentKeys);
-    else await SecureStore.setItemAsync('keys', JSON.stringify([]));
+  const getStorageItem = async (key) => {
+    const item = JSON.parse(await SecureStore.getItemAsync(key));
+    if (item) return item;
+    else await SecureStore.setItemAsync(key, JSON.stringify([]));
   };
 
-  useEffect(() => {
-    getKeys();
+  useEffect(async () => {
+    setKeys(await getStorageItem('keys'));
+    getStorageItem('categories');
   }, [isFocuesd]);
+
+  useEffect(async () => {
+    const newNotesData = await Promise.all(
+      keys.map(async (key) => JSON.parse(await SecureStore.getItemAsync(key)))
+    );
+    setNotesData(newNotesData);
+  }, [keys, isFocuesd]);
+
+  useEffect(() => {
+    const newFilteredNotes = notesData.filter(
+      (item) =>
+        item.title.toLowerCase().includes(searchInput.toLowerCase()) ||
+        item.note.toLowerCase().includes(searchInput.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchInput.toLowerCase())
+    );
+    setFilteredNotes(newFilteredNotes);
+  }, [searchInput]);
 
   return (
     <View>
+      <TextInput
+        placeholder="Search notes"
+        value={searchInput}
+        onChangeText={setSearchInput}
+        style={styles.search}
+        // ref={searchRef}
+      />
       <FlatList
-        data={keys}
+        data={searchInput ? filteredNotes : notesData}
         renderItem={({ item }) => (
-          <NoteItem key={item} id={item} deleteItem={deleteItem} />
+          <NoteItem
+            key={item.key}
+            data={item}
+            navigation={navigation}
+            deleteItem={deleteItem}
+          />
         )}
-        keyExtractor={(item) => item}
+        keyExtractor={(item) => item.key}
         numColumns={2}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  search: {
+    backgroundColor: 'gray',
+    height: 40,
+    width: '95%',
+    marginTop: 10,
+    alignSelf: 'center',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    color: 'black',
+    fontSize: 18,
+  },
+});
